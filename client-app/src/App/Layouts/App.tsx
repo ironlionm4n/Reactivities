@@ -1,67 +1,31 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
 import "./styles.css";
-import axios from "axios";
 import { Container } from "semantic-ui-react";
-import { Activity } from "../Models/activity";
 import NavBar from "./NavBar";
 import ActivitiesDashboard from "../../Features/activities/dashboard/ActivitiesDashboard";
+import LoadingComponent from "./LoadingComponent";
+import { useStore } from "../stores/store";
+import { observer } from "mobx-react-lite";
 
 function App(): JSX.Element {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState<
-    Activity | undefined
-  >();
-  const [editMode, setEditMode] = useState<boolean>(false);
-
-  const handleSetActivity = (id: string) => {
-    setSelectedActivity(activities.find((x) => x.id === id));
-  };
-
-  const handleCancelSelectActivity = () => {
-    setSelectedActivity(undefined);
-  };
-
-  const handleEditActivityOpen = (id?: string) => {
-    id ? handleSetActivity(id) : handleCancelSelectActivity();
-    setEditMode(true);
-  };
-
-  const handleEditActivityClose = () => {
-    setEditMode(false);
-  };
-
-  const openForm = () => {
-    setEditMode(true);
-  };
+  const { activityStore } = useStore();
 
   useEffect(() => {
-    axios
-      .get<Activity[]>("http://localhost:5000/api/activities")
-      .then((response) => {
-        console.log(response);
-        setActivities(response.data);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  }, []);
+    activityStore.loadActivities();
+  }, [activityStore]);
 
   return (
     <Fragment>
-      <NavBar openForm={openForm} />
-      <Container style={{ marginTop: "7em" }}>
-        <ActivitiesDashboard
-          activities={activities}
-          selectedActivity={selectedActivity}
-          selectActivity={handleSetActivity}
-          cancelSelectActivity={handleCancelSelectActivity}
-          editMode={editMode}
-          openForm={handleEditActivityOpen}
-          closeForm={handleEditActivityClose}
-        />
-      </Container>
+      <NavBar />
+      {activityStore.loadingInitial ? (
+        <LoadingComponent />
+      ) : (
+        <Container style={{ marginTop: "7em" }}>
+          <ActivitiesDashboard />
+        </Container>
+      )}
     </Fragment>
   );
 }
 
-export default App;
+export default observer(App);

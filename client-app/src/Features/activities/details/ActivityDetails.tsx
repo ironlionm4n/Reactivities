@@ -6,19 +6,15 @@ import {
   Icon,
   Image,
 } from "semantic-ui-react";
-import { Activity } from "../../../App/Models/activity";
+import { useStore } from "../../../App/stores/store";
+import LoadingComponent from "../../../App/Layouts/LoadingComponent";
 
-interface Props {
-  activity: Activity;
-  cancelSelectActivity: () => void;
-  openForm: (id: string) => void;
-}
+const ActivityDetails = () => {
+  const { activityStore } = useStore();
+  const { selectedActivity: activity } = activityStore;
 
-const ActivityDetails = ({
-  activity,
-  cancelSelectActivity,
-  openForm,
-}: Props) => {
+  if (!activity) return <LoadingComponent />;
+
   return (
     <Card>
       <Image src={`/assets/categoryImages/${activity.category}.jpg`} />
@@ -26,7 +22,6 @@ const ActivityDetails = ({
         <Card.Header>{activity.title}</Card.Header>
         <CardMeta>
           {activity.venue}, {activity.city}
-          {"\t"}
           <Icon name="map marker alternate" />
         </CardMeta>
         <Card.Meta>
@@ -42,13 +37,13 @@ const ActivityDetails = ({
             basic
             color="blue"
             content="Edit"
-            onClick={() => openForm(activity.id)}
+            onClick={() => activityStore.openForm(activity.id)}
           />
           <Button
             basic
             color="grey"
             content="Cancel"
-            onClick={cancelSelectActivity}
+            onClick={() => activityStore.setSelectedActivity(undefined)}
           />
         </ButtonGroup>
       </Card.Content>
