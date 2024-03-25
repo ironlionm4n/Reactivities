@@ -1,20 +1,24 @@
 import { Button, ButtonGroup, Form, Segment } from "semantic-ui-react";
 import { Activity } from "../../../App/Models/activity";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useStore } from "../../../App/stores/store";
 import { observer } from "mobx-react-lite";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import LoadingComponent from "../../../App/Layouts/LoadingComponent";
+import { v4 as uuid } from "uuid";
 
 const ActivityForm = () => {
   const { activityStore } = useStore();
   const {
-    selectedActivity,
-    closeForm,
     createActivity,
     updateActivity,
     loading,
+    loadingInitial,
+    loadActivity,
   } = activityStore;
-
-  const initialState = selectedActivity ?? {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [activity, setActivity] = useState<Activity>({
     id: "",
     title: "",
     category: "",
@@ -22,12 +26,28 @@ const ActivityForm = () => {
     date: "",
     city: "",
     venue: "",
-  };
+  });
 
-  const [activity, setActivity] = useState<Activity>(initialState);
+  useEffect(() => {
+    if (id) {
+      loadActivity(id).then((activity) => {
+        if (activity === undefined) return;
+        setActivity(activity);
+      });
+    }
+  }, [id, loadActivity]);
 
   const handleSubmit = () => {
-    activity.id ? updateActivity(activity) : createActivity(activity);
+    if (activity.id) {
+      updateActivity(activity).then(() =>
+        navigate(`/activities/${activity.id}`)
+      );
+    } else {
+      activity.id = uuid();
+      createActivity(activity).then(() =>
+        navigate(`/activities/${activity.id}`)
+      );
+    }
   };
 
   const handleInputChange = (
@@ -37,6 +57,8 @@ const ActivityForm = () => {
     const { name, value } = event.target;
     setActivity({ ...activity, [name]: value });
   };
+
+  if (loadingInitial) return <LoadingComponent content="Loading activity..." />;
 
   return (
     <Segment clearing>
@@ -80,7 +102,7 @@ const ActivityForm = () => {
         />
         <ButtonGroup widths={2}>
           <Button loading={loading} positive content="Submit" />
-          <Button negative content="Cancel" onClick={closeForm} />
+          <Button negative content="Cancel" as={Link} to="/activities" />
         </ButtonGroup>
       </Form>
     </Segment>
